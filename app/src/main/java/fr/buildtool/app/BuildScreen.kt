@@ -400,20 +400,19 @@ private fun ForgingHammer(
 ) {
     val transition = rememberInfiniteTransition(label = "forge")
 
-    // Angle de frappe du marteau. 0 = armé (relevé), 1 = abattu (impact).
-    // On anime un facteur 0..1 puis on le mappe sur des degrés, plus lisible
-    // que des angles bruts.
+    // Facteur de frappe. 0 = armé (tête du marteau relevée), 1 = abattu (impact
+    // sur le crâne). On l'anime en 0..1 puis on le mappe sur l'angle de rotation.
     val swing by transition.animateFloat(
         initialValue = 0f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
             animation = keyframes {
                 durationMillis = 1000
-                0f at 0 using LinearEasing          // armé, marteau relevé
-                0f at 200 using LinearEasing         // petite pause (armé)
-                1f at 380 using LinearEasing         // abattu : descente rapide
-                1f at 480 using LinearEasing         // maintien à l'impact
-                0f at 780 using LinearEasing         // remontée
+                0f at 0 using LinearEasing            // armé, tête relevée
+                0f at 120 using LinearEasing           // petite pause (armé)
+                1f at 300 using LinearEasing           // descente rapide -> impact
+                1f at 360 using LinearEasing           // maintien à l'impact
+                0f at 680 using LinearEasing           // remontée
                 0f at 1000 using LinearEasing
             },
             repeatMode = RepeatMode.Restart,
@@ -429,10 +428,10 @@ private fun ForgingHammer(
             animation = keyframes {
                 durationMillis = 1000
                 1f at 0
-                1f at 360
-                0.82f at 430 using LinearEasing      // encaisse le coup
-                1.05f at 560 using LinearEasing       // léger rebond
-                1f at 700 using LinearEasing
+                1f at 285
+                0.80f at 330 using LinearEasing      // encaisse le coup
+                1.06f at 470 using LinearEasing       // léger rebond
+                1f at 620 using LinearEasing
                 1f at 1000
             },
             repeatMode = RepeatMode.Restart,
@@ -447,10 +446,10 @@ private fun ForgingHammer(
         val u = w / 100f   // unité relative (repère 0..100)
 
         // --- tête d'Android (demi-dôme) en bas, qui se compresse verticalement ---
-        val headW = w * 0.60f
+        val headW = w * 0.52f
         val headH = headW * 0.5f * squash
-        val headCx = w * 0.46f
-        val headBottom = h * 0.94f
+        val headCx = w * 0.50f
+        val headBottom = h * 0.93f
         val headLeft = headCx - headW / 2f
         val headTop = headBottom - headH
 
@@ -467,41 +466,45 @@ private fun ForgingHammer(
         drawCircle(Color.White, eyeR, Offset(headCx - headW * 0.18f, eyeY))
         drawCircle(Color.White, eyeR, Offset(headCx + headW * 0.18f, eyeY))
         drawLine(ink,
-            Offset(headCx - headW * 0.22f, headTop - headH * 0.15f),
-            Offset(headCx - headW * 0.34f, headTop - headH * 0.7f),
-            strokeWidth = w * 0.05f, cap = StrokeCap.Round)
+            Offset(headCx - headW * 0.20f, headTop - headH * 0.05f),
+            Offset(headCx - headW * 0.30f, headTop - headH * 0.5f),
+            strokeWidth = w * 0.045f, cap = StrokeCap.Round)
         drawLine(ink,
-            Offset(headCx + headW * 0.22f, headTop - headH * 0.15f),
-            Offset(headCx + headW * 0.34f, headTop - headH * 0.7f),
-            strokeWidth = w * 0.05f, cap = StrokeCap.Round)
+            Offset(headCx + headW * 0.20f, headTop - headH * 0.05f),
+            Offset(headCx + headW * 0.30f, headTop - headH * 0.5f),
+            strokeWidth = w * 0.045f, cap = StrokeCap.Round)
 
         // --- marteau ---
-        // Pivot = poignet, en haut à droite de la zone. Le marteau tourne autour
-        // de ce point unique. On mappe swing (0..1) sur l'angle de frappe :
-        //   armé   = -62°  (manche relevé vers le haut)
-        //   abattu = -4°   (tête juste au-dessus du crâne de l'Android)
-        val pivot = Offset(w * 0.74f, h * 0.30f)
-        val angle = -62f + swing * 58f   // -62° -> -4°
+        // Le PIVOT est le bout GAUCHE du manche : il reste quasi fixe. C'est la
+        // TÊTE du marteau (au bout droit) qui décrit un arc de cercle vertical et
+        // vient frapper le sommet du crâne, bien à plat.
+        //   armé   = -64°  (tête relevée en l'air)
+        //   abattu =   0°  (manche horizontal -> frappe plate sur le crâne)
+        val mhW = w * 0.15f      // épaisseur de la tête (le long du manche)
+        val mhH = w * 0.32f      // hauteur de la tête (perpendiculaire)
+        val handleLen = w * 0.40f
+        val handleThick = w * 0.07f
+
+        // Point d'impact : centre de la tête juste au-dessus du crâne (frappe plate).
+        val impactHeadCx = headCx
+        val impactHeadCy = headTop - mhH * 0.5f + w * 0.015f
+        // Pivot = à gauche de ce point, à la même hauteur -> manche horizontal à l'impact.
+        val pivot = Offset(impactHeadCx - handleLen, impactHeadCy)
+
+        val armedDeg = -64f
+        val angle = armedDeg + swing * (0f - armedDeg)   // -64° (armé) -> 0° (impact)
 
         rotate(degrees = angle, pivot = pivot) {
-            // Dans ce bloc, tout est tracé dans le repère NON tourné puis pivoté
-            // d'un coup autour de `pivot`. On dessine donc le marteau "au repos"
-            // (manche horizontal partant du pivot vers la gauche), la rotation
-            // s'occupe de l'orientation.
-            val handleLen = w * 0.40f
-            val handleThick = w * 0.075f
-            // manche : du pivot vers la gauche
+            // Manche : du pivot (gauche) vers la droite.
+            val headCenter = Offset(pivot.x + handleLen, pivot.y)
             drawLine(
                 ink,
                 start = pivot,
-                end = Offset(pivot.x - handleLen, pivot.y),
+                end = headCenter,
                 strokeWidth = handleThick,
                 cap = StrokeCap.Round,
             )
-            // tête du marteau : bloc perpendiculaire au bout du manche (à gauche)
-            val headCenter = Offset(pivot.x - handleLen, pivot.y)
-            val mhW = w * 0.16f   // épaisseur de la tête (le long du manche)
-            val mhH = w * 0.30f   // hauteur de la tête (perpendiculaire)
+            // Tête du marteau : bloc perpendiculaire au bout droit du manche.
             drawRoundRect(
                 color = ink,
                 topLeft = Offset(headCenter.x - mhW / 2f, headCenter.y - mhH / 2f),
