@@ -8,6 +8,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import androidx.appcompat.app.AppCompatDelegate
 
 /** Etat de la chaine de build cote serveur. */
 data class ChainStatus(
@@ -42,7 +43,18 @@ class BuildClient(
     private fun req(path: String): Request.Builder {
         val b = Request.Builder().url("$baseUrl$path")
         if (token.isNotEmpty()) b.header("X-Build-Token", token)
+        // Langue de l'UI (choix manuel via AppCompat, sinon langue systeme).
+        // Le serveur s'en sert pour localiser les logs de build (fr/en).
+        b.header("X-Forge-Lang", uiLang())
         return b
+    }
+
+    /** Renvoie le code langue effectif de l'app ("fr" ou "en", defaut "en"). */
+    private fun uiLang(): String {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        val tag = if (!locales.isEmpty) locales.get(0)?.language
+                  else java.util.Locale.getDefault().language
+        return if (tag == "fr") "fr" else "en"
     }
 
     /** Verifie si le serveur repond et renvoie l'etat de la chaine. */
