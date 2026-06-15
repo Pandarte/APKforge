@@ -46,4 +46,6 @@
     <string name="language_system">System</string>
     <string name="language_french">Français</string>
     <string name="language_english">English</string>
+    <string name="install_failed">Couldn\'t start the install. Allow installing unknown apps for APKforge.</string>
+    <string name="install_download_failed">Failed to download the APK from the server.</string>
 </resources>

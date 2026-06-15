@@ -72,4 +72,6 @@
         <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
         <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>
     </style>
+    <string name="install_failed">Impossible de lancer l\'installation. Autorise l\'installation d\'apps inconnues pour APKforge.</string>
+    <string name="install_download_failed">Echec du telechargement de l\'APK depuis le serveur.</string>
 </resources>
