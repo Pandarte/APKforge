@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  APKforge — fond d'icone. Teal uni facon Android Studio + grille fine.
-  VectorDrawable (remplace l'ancienne couleur de fond simple).
+  APKforge — fond d'icone : leger degrade teal (diagonale) + grille fine.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <!-- fond teal plein -->
-    <path
-        android:fillColor="#26A69A"
-        android:pathData="M0,0 L108,0 L108,108 L0,108 Z" />
+    <!-- fond : degrade teal diagonal -->
+    <path android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0" android:startY="0"
+                android:endX="108" android:endY="108">
+                <item android:offset="0.0" android:color="#FF33B5A0" />
+                <item android:offset="1.0" android:color="#FF1E8E82" />
+            </gradient>
+        </aapt:attr>
+    </path>
     <!-- grille fine, blanche a faible opacite -->
     <path
         android:strokeColor="#FFFFFF"
