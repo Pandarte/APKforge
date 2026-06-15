@@ -51,4 +51,9 @@
     <string name="btn_export_apk">Export</string>
     <string name="export_ok">APK exported successfully.</string>
     <string name="export_failed">Failed to export the APK.</string>
+    <string name="history_cd">History</string>
+    <string name="history_title">Built repositories</string>
+    <string name="history_empty">No repository built yet.</string>
+    <string name="history_pin">Pin</string>
+    <string name="history_delete">Delete</string>
 </resources>

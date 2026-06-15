@@ -68,4 +68,9 @@
     <string name="btn_export_apk">Exporter</string>
     <string name="export_ok">APK exportee avec succes.</string>
     <string name="export_failed">Echec de l\'export de l\'APK.</string>
+    <string name="history_cd">Historique</string>
+    <string name="history_title">Depots compiles</string>
+    <string name="history_empty">Aucun depot compile pour l\'instant.</string>
+    <string name="history_pin">Epingler</string>
+    <string name="history_delete">Supprimer</string>
 </resources>

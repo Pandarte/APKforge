@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,12 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.filled.Delete
+import java.text.DateFormat
+import java.util.Date
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
@@ -66,6 +73,16 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
     val ctx = LocalContext.current
     val scroll = rememberScrollState()
     val installScope = rememberCoroutineScope()
+    var showHistory by remember { mutableStateOf(false) }
+
+    // Enregistre dans l'historique chaque build termine (reussi ou echoue).
+    LaunchedEffect(state.phase, state.buildStatus) {
+        if (state.phase == UiState.Phase.DONE &&
+            (state.buildStatus == "success" || state.buildStatus == "failed")
+        ) {
+            HistoryStore.record(ctx, state.url, state.buildStatus!!)
+        }
+    }
 
     // auto-scroll des logs vers le bas quand ils grandissent
     LaunchedEffect(state.logLines.size) {
@@ -83,7 +100,13 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
                         Text("APKforge", style = MaterialTheme.typography.headlineMedium)
                     }
                 },
-                actions = { LanguageMenu() },
+                actions = {
+                    IconButton(onClick = { showHistory = true }) {
+                        Icon(Icons.Filled.History,
+                            contentDescription = stringResource(R.string.history_cd))
+                    }
+                    LanguageMenu()
+                },
             )
         }
     ) { pad ->
@@ -190,6 +213,16 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
+            )
+        }
+
+        if (showHistory) {
+            HistorySheet(
+                onDismiss = { showHistory = false },
+                onPick = { url ->
+                    vm.onUrlChange(url)
+                    showHistory = false
+                },
             )
         }
     }
@@ -662,6 +695,96 @@ private fun CrashCard() {
                 TextButton(onClick = {
                     CrashLogger.clear(ctx); crash = null
                 }) { Text("Effacer") }
+            }
+        }
+    }
+}
+
+/**
+ * Feuille modale listant l'historique des depots compiles. Entrees epinglees en
+ * tete. Tap sur une entree -> remplit le champ URL. Actions : epingler, supprimer.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HistorySheet(
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+) {
+    val ctx = LocalContext.current
+    var entries by remember { mutableStateOf(HistoryStore.load(ctx)) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val dateFmt = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                stringResource(R.string.history_title),
+                style = MaterialTheme.typography.titleLarge,
+            )
+
+            if (entries.isEmpty()) {
+                Text(
+                    stringResource(R.string.history_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 24.dp),
+                )
+            } else {
+                entries.forEach { e ->
+                    ListItem(
+                        headlineContent = {
+                            Text(e.url, style = MaterialTheme.typography.bodyMedium)
+                        },
+                        supportingContent = {
+                            val ok = e.status == "success"
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    if (ok) Icons.Filled.CheckCircle else Icons.Filled.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = if (ok) MaterialTheme.colorScheme.primary
+                                           else MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    dateFmt.format(Date(e.timestamp)),
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                        },
+                        leadingContent = {
+                            IconButton(onClick = {
+                                HistoryStore.togglePin(ctx, e.url)
+                                entries = HistoryStore.load(ctx)
+                            }) {
+                                Icon(
+                                    if (e.pinned) Icons.Filled.PushPin
+                                    else Icons.Outlined.PushPin,
+                                    contentDescription = stringResource(R.string.history_pin),
+                                    tint = if (e.pinned) MaterialTheme.colorScheme.primary
+                                           else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        },
+                        trailingContent = {
+                            IconButton(onClick = {
+                                HistoryStore.remove(ctx, e.url)
+                                entries = HistoryStore.load(ctx)
+                            }) {
+                                Icon(Icons.Filled.Delete,
+                                    contentDescription = stringResource(R.string.history_delete),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        },
+                        modifier = Modifier.clickable { onPick(e.url) },
+                    )
+                }
             }
         }
     }
