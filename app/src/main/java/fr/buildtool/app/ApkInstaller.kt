@@ -32,7 +32,7 @@ object ApkInstaller {
                 requestMethod = "GET"
             }
             conn.inputStream.use { input ->
-                out.outputStream.use { output -> input.copyTo(output) }
+                out.outputStream().use { output -> input.copyTo(output) }
             }
             conn.disconnect()
             if (out.length() > 0L) out else null
