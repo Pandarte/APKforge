@@ -1,116 +1,118 @@
 # ⚡ APKforge
 
-**Interface Android de compilation d'APK, pilotée depuis le téléphone.**
+**Android APK build interface, driven from your phone.**
 
-APKforge est une application Android (Kotlin / Jetpack Compose, Material 3
-Expressive, couleurs Material You dynamiques) qui pilote une chaîne de
-compilation locale tournant dans Termux. On colle l'URL d'un dépôt git, on
-appuie sur **Compiler**, les logs défilent en direct, et l'APK produit est
-récupérable à la fin — le tout sans quitter le téléphone.
+> 🇬🇧 English &nbsp;•&nbsp; [🇫🇷 Français](README.fr.md)
+
+APKforge is an Android app (Kotlin / Jetpack Compose, Material 3 Expressive,
+dynamic Material You colors) that drives a local build toolchain running inside
+Termux. Paste a git repository URL, tap **Build**, watch the logs stream live,
+and grab the resulting APK at the end — all without leaving your phone.
 
 <p align="left">
-  <img alt="Plateforme" src="https://img.shields.io/badge/plateforme-Android%2012%2B-3DDC84">
-  <img alt="Langage" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Android%2012%2B-3DDC84">
+  <img alt="Language" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF">
   <img alt="minSdk" src="https://img.shields.io/badge/minSdk-26-blue">
   <img alt="compileSdk" src="https://img.shields.io/badge/compileSdk-36-blue">
 </p>
 
 ---
 
-## Fonctionnement
+## How it works
 
-APKforge ne fait que l'**interface**. Toute la compilation se déroule côté
-serveur, là où vit la chaîne `aapt2` + `qemu`. C'est une nécessité technique :
-une application Android isolée dans son bac à sable ne peut pas lancer
-`proot`/`qemu` elle-même.
+APKforge is only the **interface**. The entire build happens server-side, where
+the `aapt2` + `qemu` toolchain lives. This is a technical necessity: a sandboxed
+Android app cannot launch `proot`/`qemu` itself.
 
 ```
-  App APKforge (Compose)  ──HTTP 127.0.0.1:8765──▶  buildserver.py (Termux / proot)
+  APKforge app (Compose)  ──HTTP 127.0.0.1:8765──▶  buildserver.py (Termux / proot)
         │                                                  │
-   saisie de l'URL,                              lance android-builder.sh
-   logs en direct,                               (clone, détecte, build via qemu)
-   bouton installer
+   URL input,                                    runs android-builder.sh
+   live logs,                                    (clone, detect, build via qemu)
+   install button
 ```
 
-Le projet compagnon qui exécute réellement les builds est
+The companion project that actually runs the builds is
 [`android-build-tools`](https://github.com/Pandarte/android-build-tools).
 
-## Prérequis
+## Requirements
 
-À configurer une fois sur le téléphone :
+To set up once on the phone:
 
-1. **Termux** installé, avec la chaîne
-   [`android-build-tools`](https://github.com/Pandarte/android-build-tools) et
-   son `buildserver.py` en place dans le proot Ubuntu.
-2. **Le serveur lancé** :
+1. **Termux** installed, with the
+   [`android-build-tools`](https://github.com/Pandarte/android-build-tools)
+   toolchain and its `buildserver.py` in place inside the Ubuntu proot.
+2. **The server running**:
    ```bash
    proot-distro login ubuntu
    python3 ~/buildserver/buildserver.py
    ```
-   (ou en service automatique via `start-build-server.sh`.)
-3. **APKforge** installée et lancée. Elle teste la connexion au serveur au
-   démarrage.
+   (or as an automatic service via `start-build-server.sh`.)
+3. **APKforge** installed and launched. It checks the connection to the server
+   on startup.
 
-Au premier lancement, si la chaîne n'est pas détectée, l'application propose un
-bouton **Installer la chaîne** qui déclenche l'installation côté serveur et en
-affiche les logs.
+On first launch, if the toolchain isn't detected, the app offers an **Install
+toolchain** button that triggers the installation server-side and shows its logs.
 
-## Utilisation
+## Usage
 
-1. Coller l'URL d'un dépôt git Android dans le champ en haut.
-2. Appuyer sur **Compiler**.
-3. Suivre les logs en direct dans la console.
-4. Récupérer l'APK produit (`APKforge.apk`) à la fin.
+1. Paste an Android git repository URL into the field at the top.
+2. Tap **Build**.
+3. Follow the logs live in the console.
+4. Grab the resulting APK (`APKforge.apk`) at the end.
 
-## Compiler APKforge
+## Building APKforge
 
-APKforge se compile avec la chaîne qu'elle pilote — ou via l'intégration
-continue.
+APKforge builds with the very toolchain it drives — or via continuous
+integration.
 
-**GitHub Actions** (le plus simple) : un push sur `main`/`master` déclenche le
-workflow [`build.yml`](.github/workflows/build.yml), qui produit l'APK debug et
-le met à disposition en artifact.
+**GitHub Actions** (easiest): a push to `main`/`master` triggers the
+[`build.yml`](.github/workflows/build.yml) workflow, which produces the debug
+APK and makes it available as an artifact.
 
-**En local** depuis Termux :
+**Locally** from Termux:
 ```bash
 bash ~/android-build-tools/build-android-local.sh ~/forge
 ```
 
-Projet Android natif : `compileSdk 36`, `minSdk 26`, AGP 8.13, Material 3
+Native Android project: `compileSdk 36`, `minSdk 26`, AGP 8.13, Material 3
 Expressive (`material3:1.4.0-alpha10`).
 
-## Détails techniques
+## Technical notes
 
-- **Material You dynamique** : actif sur Android 12 et plus ; repli sur une
-  palette neutre en dessous.
-- **Sécurité réseau** : le trafic en clair est restreint à `127.0.0.1` (voir
+- **Dynamic Material You**: active on Android 12 and above; falls back to a
+  neutral palette below.
+- **Localization**: French and English, following the system language, with an
+  in-app language picker (System / Français / English) in the top bar.
+- **Network security**: cleartext traffic is restricted to `127.0.0.1` (see
   [`network_security_config.xml`](app/src/main/res/xml/network_security_config.xml)).
-  Rien ne quitte le téléphone.
-- **Dépendances alpha** : Material 3 Expressive s'appuie sur des versions alpha
-  qui évoluent vite. Si Gradle refuse une version, utiliser la dernière
-  `material3` alpha disponible et le `compose-bom` correspondant.
+  Nothing leaves the phone.
+- **Alpha dependencies**: Material 3 Expressive relies on fast-moving alpha
+  versions. If Gradle rejects a version, use the latest available `material3`
+  alpha and the matching `compose-bom`.
 
-## Structure du projet
+## Project structure
 
 ```
 app/src/main/
 ├── AndroidManifest.xml
 ├── assets/
-│   ├── forge-install.sh          installation de la chaîne côté serveur
-│   └── forge-start.sh            démarrage du serveur de build
+│   ├── forge-install.sh          server-side toolchain installation
+│   └── forge-start.sh            build server startup
 ├── java/fr/buildtool/app/
-│   ├── MainActivity.kt           thème Material You + edge-to-edge
-│   ├── BuildScreen.kt            UI : URL, bouton, console de logs, animation
-│   ├── BuildViewModel.kt         état + polling des logs
-│   ├── BuildClient.kt            client HTTP du serveur local
-│   └── TermuxHelper.kt           interactions avec Termux
+│   ├── MainActivity.kt           Material You theme + edge-to-edge
+│   ├── BuildScreen.kt            UI: URL, button, log console, animation
+│   ├── BuildViewModel.kt         state + log polling
+│   ├── BuildClient.kt            HTTP client for the local server
+│   └── TermuxHelper.kt           Termux interactions
 └── res/
-    ├── drawable/                 icône adaptative (enclume + Android)
+    ├── drawable/                 adaptive icon (anvil + Android)
+    ├── values/ values-en/        localized strings (FR default, EN)
     ├── xml/network_security_config.xml
-    └── values/strings.xml
+    └── xml/locales_config.xml    supported app languages
 ```
 
-## Projets liés
+## Related projects
 
-- [`android-build-tools`](https://github.com/Pandarte/android-build-tools) — la
-  chaîne de compilation et le serveur HTTP qu'APKforge pilote.
+- [`android-build-tools`](https://github.com/Pandarte/android-build-tools) — the
+  build toolchain and HTTP server that APKforge drives.
