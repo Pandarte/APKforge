@@ -357,13 +357,18 @@ private fun ResultCard(
                         )
                     }
                 }
-                FilledTonalButton(
+                FilledTonalIconButton(
                     onClick = onReset,
-                    colors = ButtonDefaults.filledTonalButtonColors(
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     ),
-                ) { Text(stringResource(R.string.btn_new_build)) }
+                ) {
+                    Icon(
+                        Icons.Filled.Refresh,
+                        contentDescription = stringResource(R.string.btn_new_build),
+                    )
+                }
             }
         }
     }
