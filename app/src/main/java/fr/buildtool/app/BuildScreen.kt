@@ -35,6 +35,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -453,6 +454,15 @@ private fun ForgingHammer(
         val headLeft = headCx - headW / 2f
         val headTop = headBottom - headH
 
+        // Tête dessinée sur un calque isolé pour pouvoir "perforer" les yeux
+        // (BlendMode.Clear) : ils deviennent transparents au lieu d'être blancs,
+        // donc invisibles aussi bien en mode clair qu'en mode sombre.
+        val eyeR = w * 0.035f
+        val eyeY = headTop + headH * 0.45f
+        drawContext.canvas.saveLayer(
+            androidx.compose.ui.geometry.Rect(0f, 0f, w, h),
+            androidx.compose.ui.graphics.Paint(),
+        )
         drawArc(
             color = ink,
             startAngle = 180f,
@@ -461,10 +471,12 @@ private fun ForgingHammer(
             topLeft = Offset(headLeft, headTop),
             size = androidx.compose.ui.geometry.Size(headW, headH * 2f),
         )
-        val eyeR = w * 0.035f
-        val eyeY = headTop + headH * 0.45f
-        drawCircle(Color.White, eyeR, Offset(headCx - headW * 0.18f, eyeY))
-        drawCircle(Color.White, eyeR, Offset(headCx + headW * 0.18f, eyeY))
+        drawCircle(Color.Transparent, eyeR,
+            Offset(headCx - headW * 0.18f, eyeY), blendMode = BlendMode.Clear)
+        drawCircle(Color.Transparent, eyeR,
+            Offset(headCx + headW * 0.18f, eyeY), blendMode = BlendMode.Clear)
+        drawContext.canvas.restore()
+
         drawLine(ink,
             Offset(headCx - headW * 0.20f, headTop - headH * 0.05f),
             Offset(headCx - headW * 0.30f, headTop - headH * 0.5f),
