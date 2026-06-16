@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
@@ -777,6 +778,21 @@ private fun HistorySheet(
     val dateFmt = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        // Le ModalBottomSheet s'affiche dans une fenetre (Dialog) separee qui
+        // n'herite PAS des CompositionLocals fournis dans MainActivity. Sans
+        // cela, stringResource()/LocalContext repassent sur la config systeme
+        // et la langue choisie in-app est ignoree.
+        //
+        // IMPORTANT : on lit LocaleManager.current ICI, dans la sous-composition
+        // de la fenetre, et pas dans HistorySheet en amont. Sinon le changement
+        // de langue recompose le parent mais PAS le contenu de cette fenetre,
+        // et il fallait redemarrer l'app pour voir l'effet.
+        val lang = LocaleManager.current
+        val localizedCtx = remember(lang) { LocaleManager.wrap(ctx.applicationContext) }
+        CompositionLocalProvider(
+            LocalContext provides localizedCtx,
+            LocalConfiguration provides localizedCtx.resources.configuration,
+        ) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -847,6 +863,7 @@ private fun HistorySheet(
                     )
                 }
             }
+        }
         }
     }
 }
