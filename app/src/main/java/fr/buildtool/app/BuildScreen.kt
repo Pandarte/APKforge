@@ -147,36 +147,39 @@ fun BuildScreen(vm: BuildViewModel = viewModel()) {
 
             // --- Selecteur d'allocation memoire (heap Gradle) ---
             // 0 = defaut serveur ; sinon heap force en Mo. Persiste via SettingsStore.
-            val memEnabled = state.phase != UiState.Phase.BUILDING &&
+            // Masque pendant un build/setup : inutilisable alors, et ca libere de
+            // la place a l'ecran pour la lecture des logs.
+            val memVisible = state.phase != UiState.Phase.BUILDING &&
                              state.phase != UiState.Phase.SETUP
-            val memOptions = listOf(
-                0 to stringResource(R.string.mem_default),
-                1536 to "1.5 Go",
-                2048 to "2 Go",
-                3072 to "3 Go",
-                4096 to "4 Go",
-            )
-            Text(
-                stringResource(R.string.mem_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                memOptions.forEach { (mb, label) ->
-                    FilterChip(
-                        selected = state.memMb == mb,
-                        onClick = {
-                            vm.setMem(mb)
-                            SettingsStore.setMemMb(ctx, mb)
-                        },
-                        enabled = memEnabled,
-                        label = { Text(label) },
-                    )
+            if (memVisible) {
+                val memOptions = listOf(
+                    0 to stringResource(R.string.mem_default),
+                    1536 to "1.5 Go",
+                    2048 to "2 Go",
+                    3072 to "3 Go",
+                    4096 to "4 Go",
+                )
+                Text(
+                    stringResource(R.string.mem_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    memOptions.forEach { (mb, label) ->
+                        FilterChip(
+                            selected = state.memMb == mb,
+                            onClick = {
+                                vm.setMem(mb)
+                                SettingsStore.setMemMb(ctx, mb)
+                            },
+                            label = { Text(label) },
+                        )
+                    }
                 }
             }
 
