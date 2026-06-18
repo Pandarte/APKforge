@@ -22,7 +22,7 @@ SERVER="$HOME_DIR/buildserver/buildserver.py"
 echo "-- verification de la chaine native --"
 need_setup=0
 [ -x "$AAPT2" ] || { echo "  aapt2 ARM manquant"; need_setup=1; }
-if [ -x "$AAPT2" ] && ! "$AAPT2" version 2>/dev/null | grep -q "Android Asset Packaging Tool"; then
+if [ -x "$AAPT2" ] && ! "$AAPT2" version 2>&1 | grep -q "Android Asset Packaging Tool"; then
     echo "  aapt2 present mais ne repond pas nativement"; need_setup=1
 fi
 grep -q "android.aapt2FromMavenOverride" "$GRADLE_PROPS" 2>/dev/null \
@@ -41,7 +41,7 @@ if [ "$need_setup" = 1 ]; then
     fi
 else
     echo "  chaine native OK."
-    echo "  aapt2 : $("$AAPT2" version 2>/dev/null)"
+    echo "  aapt2 : $("$AAPT2" version 2>&1)"
 fi
 
 # --- serveur -----------------------------------------------------------------
